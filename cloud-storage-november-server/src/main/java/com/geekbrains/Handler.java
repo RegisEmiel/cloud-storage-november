@@ -6,6 +6,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -20,6 +23,8 @@ public class Handler implements Runnable{
 
     private final String name;
     private boolean isRunning;
+
+    private Path serverDir;
 
     public Handler(Socket socket) throws IOException {
         is = new DataInputStream(socket.getInputStream());

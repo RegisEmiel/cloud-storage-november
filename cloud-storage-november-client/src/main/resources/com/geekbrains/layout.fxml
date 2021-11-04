@@ -61,11 +61,14 @@
     <AnchorPane VBox.vgrow="ALWAYS">
         <ListView fx:id="clientView" layoutX="14.0" layoutY="30.0" prefHeight="297.0" prefWidth="271.0"/>
         <ListView fx:id="serverView" layoutX="355.0" layoutY="30.0" prefHeight="297.0" prefWidth="271.0"/>
-        <Button layoutX="293.0" layoutY="105.0" mnemonicParsing="false" prefHeight="55.0" prefWidth="55.0"
+        <Button onAction="#sendFileAction" layoutX="293.0" layoutY="105.0" mnemonicParsing="false" prefHeight="55.0" prefWidth="55.0"
                 text="&gt;"/>
         <Button layoutX="293.0" layoutY="175.0" mnemonicParsing="false" prefHeight="55.0" prefWidth="55.0"
                 text="&lt;"/>
-        <TextField fx:id="input" onAction="#sendMessage" layoutX="14.0" layoutY="337.0" prefHeight="27.0" prefWidth="612.0"/>
+        <TextField fx:id="input" onAction="#sendMessage" layoutX="14.0" layoutY="337.0" prefHeight="27.0" prefWidth="507.0"/>
+<!--        Кнопка отправки файла-->
+        <Button fx:id="sendFileButton" onAction="#sendFileAction" layoutX="527.0" layoutY="337.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="100.0"
+                text="Send file"/>
         <TextField layoutX="14.0" layoutY="3.0" prefHeight="27.0" prefWidth="271.0"/>
         <TextField layoutX="355.0" layoutY="3.0" prefHeight="27.0" prefWidth="271.0"/>
         <Button layoutX="253.0" layoutY="3.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="32.0"

@@ -2,6 +2,8 @@ package com.geekbrains;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,7 +15,10 @@ public class Server {
             while (true) {
                 Socket socket = server.accept();
                 log.debug("Client accepted...");
-                Handler handler = new Handler(socket);
+//                Handler handler = new Handler(socket);
+
+                FileAcceptHandler handler = new FileAcceptHandler(socket);
+
                 new Thread(handler).start();
             }
         } catch (Exception e) {
