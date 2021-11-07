@@ -1,0 +1,7 @@
+COSELA™ (trilaciclib) is administered prior to chemotherapy to help protect ES-SCLC
+patients against chemotherapy-induced myelosuppression. The Pivotal Study compared
+an etoposide/carboplatin + atezolizumab (E/P/A) regimen with COSELA vs without COSELA
+based on endpoints across multiple lineages, including:
+Incidence and duration of severe neutropenia (primary endpoints)
+Incidence of Grade 3/4 anemia and red blood cell (RBC) transfusions (secondary endpoints)
+Rate of chemotherapy dose reductions (secondary endpoint)
