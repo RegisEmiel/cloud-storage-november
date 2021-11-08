@@ -76,12 +76,14 @@ public class NioServer {
         log.debug("Received: {}", sb);
 
         String message = sb.toString().trim();
-        String[] tokens = message.split(" ");
-        String commandName = tokens[0];
+        //String[] tokens = message.split(" ");
+
+        ArrayList<String> tokens = getTokens(message);
+        String commandName = tokens.get(0);
         String fileName = "";
 
-        if (tokens.length > 1)
-            fileName = tokens[1];
+        if (tokens.size() > 1)
+            fileName = tokens.get(1);
 
         switch (commandName) {
             case "ls": {
@@ -107,7 +109,7 @@ public class NioServer {
             case "cd..": {
                 Path parentDirectory = currentDirectory.getParent();
 
-                if (Files.exists(parentDirectory))
+                if (parentDirectory != null && Files.exists(parentDirectory))
                     currentDirectory = parentDirectory;
 
                 String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
@@ -119,7 +121,7 @@ public class NioServer {
                 if ("..".equals(fileName)) {
                     Path parentDirectory = currentDirectory.getParent();
 
-                    if (Files.exists(parentDirectory))
+                    if (parentDirectory != null && Files.exists(parentDirectory))
                         currentDirectory = parentDirectory;
 
                     String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
@@ -176,9 +178,9 @@ public class NioServer {
         new NioServer();
     }
 
-    private ArrayList<String> getTokens(StringBuilder stringBuilder) {
+    private ArrayList<String> getTokens(String message) {
         ArrayList<String> tokens = new ArrayList<>();
-        String message = stringBuilder.toString().trim();
+
         String[] tmp = message.split(" ");
 
         for (String token: tmp) {
