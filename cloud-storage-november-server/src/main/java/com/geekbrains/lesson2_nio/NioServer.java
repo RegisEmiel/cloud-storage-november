@@ -115,13 +115,18 @@ public class NioServer {
 
                 break;
             }
+            case "help": {
+                commandCat(channel, "rule.txt");
+
+                break;
+            }
             case "exit":
                 channel.close();
 
                 return;
             default:
                 if (!commandName.isEmpty()) {
-                    channel.write(ByteBuffer.wrap(("Команда не распознана: " + message + "\n\r").getBytes(StandardCharsets.UTF_8)));
+                    channel.write(wrapByteBuffer("Команда не распознана: " + message + "\n\r"));
                 }
 
                 break;
@@ -156,18 +161,24 @@ public class NioServer {
     private void commandLs(SocketChannel channel) throws IOException {
         try (DirectoryStream<Path> files = Files.newDirectoryStream(currentDirectory)) {
             for (Path filePath : files) {
-                String strFilePath = filePath.toString() + (Files.isDirectory(filePath) ? "\\" : "") + "\n\r";
-                channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+                String strFilePath = pathToString(filePath);
+
+                channel.write(wrapByteBuffer(strFilePath));
             }
         }
     }
 
     private void commandCat(SocketChannel channel, String fileName) throws IOException {
+        if (fileName.isEmpty()) {
+            channel.write(wrapByteBuffer("Файл не задан\n\r"));
+            return;
+        }
+
         Path pathFile = currentDirectory.resolve(fileName);
         List<String> lines = Files.readAllLines(pathFile);
 
         for (String str : lines) {
-            channel.write(ByteBuffer.wrap((str + "\n\r").getBytes(StandardCharsets.UTF_8)));
+            channel.write(wrapByteBuffer(str + "\n\r"));
         }
     }
 
@@ -177,29 +188,53 @@ public class NioServer {
         if (parentDirectory != null && Files.exists(parentDirectory))
             currentDirectory = parentDirectory;
 
-        String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
-        channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+        String strFilePath = pathToString(currentDirectory);
+        channel.write(wrapByteBuffer(strFilePath));
     }
 
     private void commandCd(SocketChannel channel, String fileName) throws IOException {
-        Path newDirectory = currentDirectory.resolve(fileName);
+        Path newDirectory;
+        try {
+            newDirectory = currentDirectory.resolve(fileName);
+        }
+        catch (Exception ex) {
+            channel.write(wrapByteBuffer("Указанный путь не поддерживается: " + fileName + "\n\r"));
+
+            return;
+        }
+
 
         if (Files.exists(newDirectory)) {
             currentDirectory = newDirectory;
 
-            String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
-            channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+            String strFilePath = pathToString(currentDirectory);
+            channel.write(wrapByteBuffer(strFilePath));
         }
     }
 
     private void commandMkDir(SocketChannel channel, String fileName) throws IOException {
+        if (fileName.isEmpty()) {
+            channel.write(wrapByteBuffer("Директория не задана\n\r"));
+            return;
+        }
+
         Path newDirectory = currentDirectory.resolve(fileName);
 
         if (!Files.exists(newDirectory)) {
             Files.createDirectory(newDirectory);
 
-            String strFilePath = newDirectory.toString() + (Files.isDirectory(newDirectory) ? "\\" : "") + "\n\r";
-            channel.write(ByteBuffer.wrap(("Создана директория: " + strFilePath).getBytes(StandardCharsets.UTF_8)));
+            String strFilePath = pathToString(newDirectory);
+            channel.write(wrapByteBuffer("Создана директория: " + strFilePath));
         }
+        else
+            channel.write(wrapByteBuffer(newDirectory + " уже существует\n\r"));
+    }
+
+    private ByteBuffer wrapByteBuffer(String msg) {
+        return ByteBuffer.wrap((msg).getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String pathToString(Path filePath) {
+        return filePath.toString() + (Files.isDirectory(filePath) ? "\\" : "") + "\n\r";
     }
 }
