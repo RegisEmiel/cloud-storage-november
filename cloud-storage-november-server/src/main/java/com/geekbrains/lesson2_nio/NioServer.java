@@ -11,6 +11,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -19,11 +20,12 @@ public class NioServer {
     private ByteBuffer buf;
     private Selector selector;
     private ServerSocketChannel serverChannel;
-
-    private final Path WORK_PATH = Paths.get("cloud-storage-november-server", "server");
+    private Path currentDirectory;
 
     public NioServer() {
         buf = ByteBuffer.allocate(256);
+
+        currentDirectory = Paths.get("cloud-storage-november-server", "server");
 
         try {
             serverChannel = ServerSocketChannel.open();
@@ -83,25 +85,69 @@ public class NioServer {
 
         switch (commandName) {
             case "ls": {
-                try (DirectoryStream<Path> files = Files.newDirectoryStream(WORK_PATH)) {
-                    for (Path filePath : files)
-                        channel.write(ByteBuffer.wrap((filePath.toString() + "\n\r").getBytes(StandardCharsets.UTF_8)));
+                try (DirectoryStream<Path> files = Files.newDirectoryStream(currentDirectory)) {
+                    for (Path filePath : files) {
+                        String strFilePath = filePath.toString() + (Files.isDirectory(filePath) ? "\\" : "") + "\n\r";
+                        channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+                    }
                 }
 
                 break;
             }
             case "cat": {
-                Path pathFile = WORK_PATH.resolve(fileName);
-                List<String> stringsFile = Files.readAllLines(pathFile);
+                Path pathFile = currentDirectory.resolve(fileName);
+                List<String> lines = Files.readAllLines(pathFile);
 
-                for (String str : stringsFile) {
+                for (String str : lines) {
                     channel.write(ByteBuffer.wrap((str + "\n\r").getBytes(StandardCharsets.UTF_8)));
                 }
 
                 break;
             }
-            case "cd":
-            case "sd..": {
+            case "cd..": {
+                Path parentDirectory = currentDirectory.getParent();
+
+                if (Files.exists(parentDirectory))
+                    currentDirectory = parentDirectory;
+
+                String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
+                channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+
+                break;
+            }
+            case "cd": {
+                if ("..".equals(fileName)) {
+                    Path parentDirectory = currentDirectory.getParent();
+
+                    if (Files.exists(parentDirectory))
+                        currentDirectory = parentDirectory;
+
+                    String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
+                    channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+
+                    break;
+                }
+
+                Path newDirectory = currentDirectory.resolve(fileName);
+
+                if (Files.exists(newDirectory)) {
+                    currentDirectory = newDirectory;
+
+                    String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
+                    channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+                }
+
+                break;
+            }
+            case "mkdir": {
+                Path newDirectory = currentDirectory.resolve(fileName);
+
+                if (!Files.exists(newDirectory)) {
+                    Files.createDirectory(newDirectory);
+
+                    String strFilePath = newDirectory.toString() + (Files.isDirectory(newDirectory) ? "\\" : "") + "\n\r";
+                    channel.write(ByteBuffer.wrap(("Создана директория: " + strFilePath).getBytes(StandardCharsets.UTF_8)));
+                }
 
                 break;
             }
@@ -128,5 +174,18 @@ public class NioServer {
 
     public static void main(String[] args) {
         new NioServer();
+    }
+
+    private ArrayList<String> getTokens(StringBuilder stringBuilder) {
+        ArrayList<String> tokens = new ArrayList<>();
+        String message = stringBuilder.toString().trim();
+        String[] tmp = message.split(" ");
+
+        for (String token: tmp) {
+            if (!token.isEmpty())
+                tokens.add(token);
+        }
+
+        return tokens;
     }
 }
