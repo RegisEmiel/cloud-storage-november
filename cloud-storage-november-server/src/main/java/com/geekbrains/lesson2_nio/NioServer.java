@@ -76,8 +76,6 @@ public class NioServer {
         log.debug("Received: {}", sb);
 
         String message = sb.toString().trim();
-        //String[] tokens = message.split(" ");
-
         ArrayList<String> tokens = getTokens(message);
         String commandName = tokens.get(0);
         String fileName = "";
@@ -87,69 +85,33 @@ public class NioServer {
 
         switch (commandName) {
             case "ls": {
-                try (DirectoryStream<Path> files = Files.newDirectoryStream(currentDirectory)) {
-                    for (Path filePath : files) {
-                        String strFilePath = filePath.toString() + (Files.isDirectory(filePath) ? "\\" : "") + "\n\r";
-                        channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
-                    }
-                }
+                commandLs(channel);
 
                 break;
             }
             case "cat": {
-                Path pathFile = currentDirectory.resolve(fileName);
-                List<String> lines = Files.readAllLines(pathFile);
-
-                for (String str : lines) {
-                    channel.write(ByteBuffer.wrap((str + "\n\r").getBytes(StandardCharsets.UTF_8)));
-                }
+                commandCat(channel, fileName);
 
                 break;
             }
             case "cd..": {
-                Path parentDirectory = currentDirectory.getParent();
-
-                if (parentDirectory != null && Files.exists(parentDirectory))
-                    currentDirectory = parentDirectory;
-
-                String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
-                channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+                commandCdUp(channel);
 
                 break;
             }
             case "cd": {
                 if ("..".equals(fileName)) {
-                    Path parentDirectory = currentDirectory.getParent();
-
-                    if (parentDirectory != null && Files.exists(parentDirectory))
-                        currentDirectory = parentDirectory;
-
-                    String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
-                    channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+                    commandCdUp(channel);
 
                     break;
                 }
 
-                Path newDirectory = currentDirectory.resolve(fileName);
-
-                if (Files.exists(newDirectory)) {
-                    currentDirectory = newDirectory;
-
-                    String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
-                    channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
-                }
+                commandCd(channel, fileName);
 
                 break;
             }
             case "mkdir": {
-                Path newDirectory = currentDirectory.resolve(fileName);
-
-                if (!Files.exists(newDirectory)) {
-                    Files.createDirectory(newDirectory);
-
-                    String strFilePath = newDirectory.toString() + (Files.isDirectory(newDirectory) ? "\\" : "") + "\n\r";
-                    channel.write(ByteBuffer.wrap(("Создана директория: " + strFilePath).getBytes(StandardCharsets.UTF_8)));
-                }
+                commandMkDir(channel, fileName);
 
                 break;
             }
@@ -189,5 +151,55 @@ public class NioServer {
         }
 
         return tokens;
+    }
+
+    private void commandLs(SocketChannel channel) throws IOException {
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(currentDirectory)) {
+            for (Path filePath : files) {
+                String strFilePath = filePath.toString() + (Files.isDirectory(filePath) ? "\\" : "") + "\n\r";
+                channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+            }
+        }
+    }
+
+    private void commandCat(SocketChannel channel, String fileName) throws IOException {
+        Path pathFile = currentDirectory.resolve(fileName);
+        List<String> lines = Files.readAllLines(pathFile);
+
+        for (String str : lines) {
+            channel.write(ByteBuffer.wrap((str + "\n\r").getBytes(StandardCharsets.UTF_8)));
+        }
+    }
+
+    private void commandCdUp(SocketChannel channel) throws IOException {
+        Path parentDirectory = currentDirectory.getParent();
+
+        if (parentDirectory != null && Files.exists(parentDirectory))
+            currentDirectory = parentDirectory;
+
+        String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
+        channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private void commandCd(SocketChannel channel, String fileName) throws IOException {
+        Path newDirectory = currentDirectory.resolve(fileName);
+
+        if (Files.exists(newDirectory)) {
+            currentDirectory = newDirectory;
+
+            String strFilePath = currentDirectory.toString() + (Files.isDirectory(currentDirectory) ? "\\" : "") + "\n\r";
+            channel.write(ByteBuffer.wrap((strFilePath).getBytes(StandardCharsets.UTF_8)));
+        }
+    }
+
+    private void commandMkDir(SocketChannel channel, String fileName) throws IOException {
+        Path newDirectory = currentDirectory.resolve(fileName);
+
+        if (!Files.exists(newDirectory)) {
+            Files.createDirectory(newDirectory);
+
+            String strFilePath = newDirectory.toString() + (Files.isDirectory(newDirectory) ? "\\" : "") + "\n\r";
+            channel.write(ByteBuffer.wrap(("Создана директория: " + strFilePath).getBytes(StandardCharsets.UTF_8)));
+        }
     }
 }
